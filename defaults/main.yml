@@ -1,0 +1,9 @@
+---
+# defaults file for gnome-de
+
+gnome_packages:
+- gnome-shell
+- gnome-terminal
+- gcc
+- make
+- perl

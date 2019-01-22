@@ -1,0 +1,56 @@
+---
+- name: Add Apt signing key for virtualbox repo
+  apt_key:
+    url: https://www.virtualbox.org/download/oracle_vbox_2016.asc
+    state: present
+
+- name: Add VirtualBox to sourcelist
+  apt_repository:
+    repo: deb https://download.virtualbox.org/virtualbox/debian xenial contrib
+    state: present
+
+- name: Run the equivalent of "apt-get update" as a separate step
+  apt:
+    update_cache: yes
+
+- name: Update all packages to the latest version
+  apt:
+    upgrade: dist
+
+- name: Install gnome
+  package:
+    name: "{{ gnome_packages }}"
+    state: latest
+
+- name: Configure passwordless login
+  lineinfile:
+    path: /etc/pam.d/gdm-password
+    line: 'auth sufficient pam_succeed_if.so user ingroup nopasswdlogin'
+    create: yes
+
+- name: Ensure group "nopasswdlogin" exists
+  group:
+    name: nopasswdlogin
+    state: present
+
+- name: Add the user vagrant to nopasswdlogin group
+  user:
+    name: vagrant
+    shell: /bin/bash
+    groups: nopasswdlogin
+    append: yes
+
+- name: Configure automatic vagrant login at boot
+  blockinfile:
+    path: /etc/gdm3/custom.conf
+    create: yes
+    block: |
+      [daemon]
+      AutomaticLogin=vagrant
+      AutomaticLoginEnable=True
+
+- name: rebuild locales database
+  command: "{{ item }}"
+  with_items:
+    - /usr/sbin/locale-gen
+    - /usr/bin/localectl set-locale LANG="en_US.UTF-8"
